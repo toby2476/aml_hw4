@@ -53,13 +53,13 @@ def cluster_cost(k):
 		cost += np.dot((data[i] - centers[prediction[i]]),(data[i] - centers[prediction[i]]))
 	return cost 
 
-cost_list = np.zeros((9))
-for i in range(2,11):
+k_max = 26
+cost_list = np.zeros((k_max-1))
+for i in range(2,k_max+1):
 	cost_list[i-2] = cluster_cost(i)
-cost_func = pd.DataFrame(cost_list, index=np.linspace(2,10,num=9))
+cost_func = pd.DataFrame(cost_list, index=np.linspace(2,k_max,num=k_max-1))
 knee = cost_func.plot(kind='line',title='Total Within-Cluster Sum of Square Distance with K Clusters',figsize=(10,8),fontsize=12,legend=False)
 knee.set_xlabel('K',fontsize=12)
 knee.set_ylabel('Total Within-Cluster Sum of Square Distance',fontsize=12)
 plt.show()
-
 
