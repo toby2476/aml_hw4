@@ -69,7 +69,7 @@ def get_samples(data,segment_length):
 		for a in range(len(data[b])):
 			start_val.append(len(samples))
 			num_samples = len(data[b][a])
-			num_segments = (int)(num_samples/(segment_length)) #Number of segments within file
+			num_segments = (int)(num_samples/(segment_length))#Number of segments within file
 			for i in range(num_segments):
 				start_idx = i*(segment_length) #Starting index for segment
 				end_idx = start_idx + segment_length #Ending index for segment
@@ -85,13 +85,14 @@ def get_samples(data,segment_length):
 	return retval
 	
 
-def k_means(samples,k):
+def k_means(train_samples,test_samples,k):
 	
-	cluster = KMeans(n_clusters=k).fit(samples) #Do kmeans on all fixed length segments
-	pred = cluster.predict(samples)
+	cluster = KMeans(n_clusters=k).fit(train_samples) #Do kmeans on all fixed length segments
+	pred_train = cluster.predict(train_samples)
+	pred_test = cluster.predict(test_samples)
 	centers = cluster.cluster_centers_
-	retval = [pred, centers]
-        ss = silhouette_score(samples,pred,metric='euclidean') #A metric to denote how well data is clustering
+	retval = [pred_train,pred_test,centers]
+        #ss = silhouette_score(samples,pred,metric='euclidean') #A metric to denote how well data is clustering
 	#print(ss) 
 	return retval;
 
@@ -104,7 +105,8 @@ def get_histogram(data,pred,centers,sample_size,startval): #Make histogram showi
 			num_centers = len(centers)
 			signal_len = int(len(data[i][j])/sample_size)
 			prediction = (pred[startval[i][j]:startval[i][j]+signal_len]).tolist() #Make list of cluster predictions for current file
-
+		
+	
 			#if j==0 or j==1:
 			#	plt.hist(prediction, bins=480)
 			#	plt.show()
@@ -121,7 +123,7 @@ def get_histogram(data,pred,centers,sample_size,startval): #Make histogram showi
 
 
 def classify_data(train_hist,test_hist): #Random forest classification
-	rf = RandomForestClassifier(n_estimators=30,max_depth=20)
+	rf = RandomForestClassifier(n_estimators=300,max_depth=30)
 	train_labels = train_hist[:,-1]
 	train_data = train_hist[:,:-1]
 	test_labels = test_hist[:,-1]
@@ -135,17 +137,19 @@ def classify_data(train_hist,test_hist): #Random forest classification
 	
 	
 
-NUM_SAMPLES = 16 #Size of each segment
+NUM_SAMPLES = 32 #Size of each segment
 K = 480 #Number of clusters
 
 [train,test] = import_all()
 [train_samples, train_startval] = get_samples(train,NUM_SAMPLES)
-print(train_samples.shape)
+
+
 [test_samples, test_startval] = get_samples(test,NUM_SAMPLES)
-[train_pred, train_centers] = k_means(train_samples,K)
-[test_pred, test_centers] = k_means(test_samples,K)
-train_hist = get_histogram(train,train_pred,train_centers,NUM_SAMPLES,train_startval)
-test_hist = get_histogram(test,test_pred,test_centers,NUM_SAMPLES,test_startval)
+
+[train_pred,test_pred,centers] = k_means(train_samples,test_samples,K)
+
+train_hist = get_histogram(train,train_pred,centers,NUM_SAMPLES,train_startval)
+test_hist = get_histogram(test,test_pred,centers,NUM_SAMPLES,test_startval)
 score = classify_data(train_hist,test_hist)
 print(score)
 
