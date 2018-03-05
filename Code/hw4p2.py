@@ -131,11 +131,39 @@ def classify_data(train_hist,test_hist): #Random forest classification
 	rf.fit(train_data,train_labels)
 	test_pred = rf.predict(test_data)
 	cm = confusion_matrix(test_labels,test_pred) #Confusion Matrix
-	print(cm)
 	score = rf.score(test_data,test_labels) #Accuracy score
-	return score
+	retval = [score, cm]
+	return retval
 	
+
+def plot_accuracy(train,test):
+	k_range = [120,240,480,720]
+	NUM_SAMPLES = [16,32,48,64]
+	scores = []
 	
+	for n in NUM_SAMPLES:
+		scores_k = []
+		for k in k_range:
+			[train_samples, train_startval] = get_samples(train,n)
+			[test_samples, test_startval] = get_samples(test,n)
+			[train_pred,test_pred,centers] = k_means(train_samples,test_samples,k)
+			train_hist = get_histogram(train,train_pred,centers,n,train_startval)
+			test_hist = get_histogram(test,test_pred,centers,n,test_startval)
+			[score, cm] = classify_data(train_hist,test_hist)
+			scores_k.append(score)
+		scores.append(scores_k)
+	n1 = plt.scatter(k_range,scores[0],label="n=16")
+	n2 = plt.scatter(k_range,scores[1],label="n=32")
+	n3 = plt.scatter(k_range,scores[2],label="n=48")
+	n4 = plt.scatter(k_range,scores[3],label="n=64")
+
+	plt.legend((n1,n2,n3,n4),('n=16','n=32','n=48','n=64'),scatterpoints=1,loc='lower right',fontsize=8)
+	plt.ylabel('Accuracy')
+	plt.xlabel('Number of Clusters')
+	plt.title('Classification Accuracy for Accelerometer Data')
+	plt.show()
+			
+
 
 NUM_SAMPLES = 32 #Size of each segment
 K = 480 #Number of clusters
@@ -150,8 +178,13 @@ K = 480 #Number of clusters
 
 train_hist = get_histogram(train,train_pred,centers,NUM_SAMPLES,train_startval)
 test_hist = get_histogram(test,test_pred,centers,NUM_SAMPLES,test_startval)
-score = classify_data(train_hist,test_hist)
-print(score)
+[score, cm] = classify_data(train_hist,test_hist)
+print("Confusion Matrix:")
+print(cm)
+print("Accuracy: %f" % score)
+print("Total Error Rate: %f" % (1-score))
+plot_accuracy(train,test)
+
 
 
 
